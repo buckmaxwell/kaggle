@@ -1,18 +1,27 @@
+
+
+#----- Added by me -----#
+# Pickles
+*.pickle
+*.pkl
+
+# Models
+*.keras
+*.h5
+
+# Logs
+tunerlogs/
+
+# ----- end of Added by me -----#
+
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
 *$py.class
 
-# Pickles
-*.pickle
-*.pkl
-
 # C extensions
 *.so
 
-# Models
-*.keras
-*.h5
 
 # Distribution / packaging
 .Python
