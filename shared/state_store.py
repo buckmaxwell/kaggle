@@ -5,10 +5,10 @@ class StateStore:
     def __init__(self, filename="state.pickle", load=False):
         self.filename = filename
         if load:
-            self.state_store = {}
-        else:
             with open(filename, "rb") as f:
                 self.state_store = pickle.load(f)
+        else:
+            self.state_store = {}
 
         with open(filename, "wb") as f:
             pickle.dump(self.state_store, f)
@@ -25,6 +25,9 @@ class StateStore:
             self.state_store = pickle.load(f)
 
         if name:
-            return self.state_store[name]
+            try:
+                return self.state_store[name]
+            except KeyError:
+                return None
         else:
             return self.state_store

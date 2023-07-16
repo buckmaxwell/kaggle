@@ -13,9 +13,7 @@ sys.path.append("/Users/maxbuck/Documents/kagcomp")
 
 from shared.state_store import StateStore
 from competitions.titanic.code.run import (
-    drop_useless_columns,
-    handle_missing_values,
-    encode_categorical_variables,
+    preprocess_data,
     identify_missing_values,
 )
 
@@ -30,27 +28,31 @@ for path in glob(glob_path):
 
 model_path = latest[1]
 model_date_str = latest[0].strftime("%Y%m%d%H%M%S")
+print(f"Using model {model_path}")
 model = load_model(model_path)
 
 # Load state store
 state_store = StateStore(load=True)
+print(f"State: {state_store.get()}")
 
 # Load test data
 test_df = pd.read_csv("../data/test.csv")
 
 # Preprocess test data
 # Be sure to fill missing values and drop columns exactly as you did with your training data
-test_df = drop_useless_columns(test_df)
-test_df = handle_missing_values(test_df, state_store)
-test_df = encode_categorical_variables(test_df, state_store)
+test_df = preprocess_data(test_df, state_store)
+
 
 identify_missing_values(test_df)  # Should be empty
 
 # Ensure that test data columns align with what the model was trained on
 final_columns = state_store.get("column_names")
 for col in final_columns:
-    if col not in test_df.columns:
+    if col not in test_df.columns and col != "Survived":
         test_df[col] = 0
+
+# Print number of columns in df_test
+print(f"Number of columns in test data: {len(test_df.columns)}")
 
 # Normalize test data into all floats
 test_df = test_df.astype(np.float32)
