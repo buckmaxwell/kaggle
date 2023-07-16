@@ -55,7 +55,14 @@ def get_best_hyperparameters(X_train, y_train):
 
 def create_model(best_hps):
     model = Sequential()
+
     model.add(Dense(best_hps.get("units"), activation=best_hps.get("dense_activation")))
+    model.add(
+        Dense(best_hps.get("units"), activation=best_hps.get("dense_activation"))
+    )  # additional hidden layer
+    model.add(
+        Dense(best_hps.get("units"), activation=best_hps.get("dense_activation"))
+    )  # additional hidden layer
     model.add(Dense(1, activation="sigmoid"))
 
     # Compile the model
@@ -169,7 +176,7 @@ if __name__ == "__main__":
     # print number of columns in df_train
     print(f"Number of columns in df_train: {len(df_train.columns)}")
 
-    best_model = None
+    best_hps = None
     best_score = 0
 
     # iterate over each fold
@@ -204,11 +211,30 @@ if __name__ == "__main__":
         # save the best model
         if scores[1] > best_score:
             best_score = scores[1]
-            best_model = model
+            best_hps = best_hps
+
+    # Now that we have the best hyperparameters, retrain on the whole dataset
+    final_model = create_model(best_hps)
+    # Normalize the whole dataset
+    X_train = X.astype("float32")
+    y_train = y.astype("float32")
+
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train, y_train, test_size=0.2, random_state=42
+    )
+
+    # fit the final model
+    final_model.fit(
+        X_train,
+        y_train,
+        epochs=100,
+        # test_size=0.2,
+        # random_state=42,
+    )
 
     print(f"Number of features (columns) in X: {X.shape[1]}")
 
     # Save the best model
-    best_model.save(
+    final_model.save(
         f"../models/{datetime.now().strftime('%Y%m%d%H%M%S')}_titanic_model.keras"
     )
