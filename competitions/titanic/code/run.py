@@ -3,6 +3,11 @@
 import os
 import sys
 import pandas as pd
+from datetime import datetime
+
+from sklearn.model_selection import train_test_split
+from tensorflow.keras.models import Sequential
+from tensorflow.keras.layers import Dense
 
 # append the path three directories up to import the variable store
 sys.path.append("/Users/maxbuck/Documents/kagcomp")
@@ -12,6 +17,11 @@ from shared.state_store import StateStore
 
 def load_data():
     df = pd.read_csv("../data/train.csv")
+    return df
+
+
+def drop_useless_columns(df):
+    df = df.drop(columns=["PassengerId", "Name", "Ticket"])
     return df
 
 
@@ -36,7 +46,7 @@ def identify_missing_values(df):
     print(df.isnull().sum())
 
 
-def encode_categorical_variables(df):
+def encode_categorical_variables(df, state_store):
     # One-hot encode categorical variables
     df = pd.get_dummies(df, columns=["Sex", "Embarked"])
 
@@ -48,11 +58,51 @@ def encode_categorical_variables(df):
 if __name__ == "__main__":
     state_store = StateStore()
 
-    df = load_data()
-    df = handle_missing_values(df, state_store)
-    df = encode_categorical_variables(df)
-    identify_missing_values(df)  # Should be empty
+    df_train = load_data()
+    df_train = drop_useless_columns(df_train)
+    df_train = handle_missing_values(df_train, state_store)
+    df_train = encode_categorical_variables(df_train, state_store)
+    identify_missing_values(df_train)  # Should be empty
 
-    # To retrieve the column names later, you can do:
-    column_names = state_store.get("column_names")
-    print(column_names)
+    # Load and preprocess the test data
+    # df_test = load_test_data()
+    # df_test = handle_missing_values(df_test, state_store)
+    # df_test = encode_categorical_variables(df_test, state_store)
+
+    ## Make sure test data has the same columns as the training data
+    # df_test = df_test.reindex(columns=state_store.get("column_names"), fill_value=0)
+
+    # Separate features and target from the training data
+    y_train = df_train["Survived"]
+    X_train = df_train.drop("Survived", axis=1)
+
+    # Split the training data into a training set and a validation set
+    X_train, X_val, y_train, y_val = train_test_split(
+        X_train, y_train, test_size=0.2, random_state=42
+    )
+
+    # Normalize the data into all floats
+    X_train = X_train.astype("float32")
+    y_train = y_train.astype("float32")
+    X_val = X_val.astype("float32")
+    y_val = y_val.astype("float32")
+
+    # Define the model
+    model = Sequential(
+        [
+            Dense(32, activation="relu", input_shape=(X_train.shape[1],)),
+            Dense(32, activation="relu"),
+            Dense(1, activation="sigmoid"),
+        ]
+    )
+
+    # Compile the model
+    model.compile(optimizer="adam", loss="binary_crossentropy", metrics=["accuracy"])
+
+    # Train the model
+    history = model.fit(X_train, y_train, epochs=100, validation_data=(X_val, y_val))
+
+    # Save the model
+    model.save(
+        f"../models/{datetime.now().strftime('%Y%m%d%H%M%S')}_titanic_model.keras"
+    )

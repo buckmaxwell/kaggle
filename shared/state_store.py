@@ -2,9 +2,14 @@ import pickle
 
 
 class StateStore:
-    def __init__(self, filename="state.pickle"):
+    def __init__(self, filename="state.pickle", load=False):
         self.filename = filename
-        self.state_store = {}
+        if load:
+            self.state_store = {}
+        else:
+            with open(filename, "rb") as f:
+                self.state_store = pickle.load(f)
+
         with open(filename, "wb") as f:
             pickle.dump(self.state_store, f)
 
